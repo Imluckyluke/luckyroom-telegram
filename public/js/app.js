@@ -2,8 +2,9 @@
 'use strict';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const NAMES = ['#e17076', '#faa357', '#a695e7', '#7bc862', '#6ec9cb', '#65aadd', '#ee7aae'];
-const AV = [['#ff845e', '#d45246'], ['#ffa127', '#e46e18'], ['#b580f2', '#7b61ff'], ['#5fc9f3', '#3390ec'], ['#5dd978', '#3aa655'], ['#6ad7fd', '#2a9ad8'], ['#f27fa5', '#d44d7d']];
+/* Peer + avatar colors — exact Telegram WebK palette */
+const NAMES = ['#cc5049', '#d67722', '#955cdb', '#40a920', '#309eba', '#368ad1', '#c7508b'];
+const AV = [['#ff845e', '#d45246'], ['#febb5b', '#f68136'], ['#b694f9', '#6c61df'], ['#9ad164', '#46ba43'], ['#53edd6', '#28c9b7'], ['#5caffa', '#408acf'], ['#ff8aac', '#d95574']];
 const hash = s => [...String(s)].reduce((a, c) => a + c.charCodeAt(0), 0);
 const NC = s => NAMES[hash(s) % NAMES.length];
 const G = s => AV[hash(s) % AV.length];
@@ -222,7 +223,9 @@ async function openChat(c) {
   $('#chatView').classList.remove('hidden');
   $('#peerAvatar').outerHTML = avatarHTML(c.avatarUrl, c.name, 'sm').replace('class="avatar sm"', 'id="peerAvatar" class="avatar sm"');
   $('#peerName').textContent = c.name;
-  $('#peerStatus').textContent = statusText(c);
+  const pst = $('#peerStatus');
+  pst.textContent = statusText(c);
+  pst.classList.toggle('online', /online|typing/.test(pst.textContent));
   const t = targetOf(c);
   Api.send('join', t).catch(() => {});
   if (c.kind === 'group') {

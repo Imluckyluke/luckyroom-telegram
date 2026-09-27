@@ -3,6 +3,11 @@
 Luckyroom chat backend (groups + DMs, realtime Socket.io, uploads, stickers, roles)
 with a **Telegram Web-style frontend** in `public/`.
 
+> Attribution: the chat wallpaper (`public/img/pattern.svg`) and the UI
+> design tokens (night palette, bubbles, sizes) are derived from the
+> official Telegram WebK client (github.com/morethanwords/tweb, GPLv3).
+> The server code and the client logic/wording are original to this repo.
+
 ## Features (all functional, wired to the real backend)
 
 - Auth (first option = Google): Continue with Google (Gmail, needs
