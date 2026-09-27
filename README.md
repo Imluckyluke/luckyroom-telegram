@@ -5,8 +5,12 @@ with a **Telegram Web-style frontend** in `public/`.
 
 ## Features (all functional, wired to the real backend)
 
-- Auth: sign up / log in (name + phone + password), sessions, logout everywhere,
-  phone OTP verify, password reset via OTP or security questions, account lockout
+- Auth (first option = Google): Continue with Google (Gmail, needs
+  `GOOGLE_CLIENT_ID`), phone-only login with no password and no SMS code
+  (needs `ALLOW_PHONE_ONLY_LOGIN=true` — for trusted/offline use, e.g. an
+  internet shutdown), classic sign up / log in (name + phone + password),
+  sessions, logout everywhere, phone OTP verify, password reset via OTP or
+  security questions, account lockout
 - Chats: DMs (start by phone or @username), public/private groups, public
   discovery, invite links, direct invites (accept/reject), join, leave
 - Messaging: text, photo/video/file/voice (encrypted at rest), stickers
@@ -52,6 +56,9 @@ docker run -d --name luckyroom -p 4000:4000 \
    - `CORS_ORIGIN` = `*` (or your domain)
    - `TELEGRAM_BOT_TOKEN` = optional (sticker import)
    - `UPLOAD_ENCRYPTION_KEY`, `UPLOAD_LINK_SECRET` = random strings (production)
+   - `GOOGLE_CLIENT_ID` = Google OAuth client ID (optional, enables Gmail login)
+   - `ALLOW_PHONE_ONLY_LOGIN` = `true` to allow passwordless/SMS-less phone
+     login (offline mode — only on networks you control)
 4. Deploy — migrations run automatically on boot.
 
 ## Env reference

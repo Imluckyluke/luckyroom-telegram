@@ -85,6 +85,20 @@ module.exports = {
     expiresIn: process.env.JWT_EXPIRES_IN || '7d'
   },
 
+  auth: {
+    // Google (Gmail) login. Create OAuth client credentials (Web) in the
+    // Google Cloud console and set the client ID here; the frontend renders
+    // "Continue with Google" as the first login option when this is set.
+    googleClientId: process.env.GOOGLE_CLIENT_ID || null,
+
+    // Phone-only login (no password, no SMS code): for trusted / offline
+    // deployments (e.g. an internet shutdown, where no SMS gateway or
+    // password reset can work). OFF by default — enabling it lets anyone
+    // sign in with any valid phone number (new numbers auto-register), so
+    // only use it on a network you control.
+    allowPhoneOnly: (process.env.ALLOW_PHONE_ONLY_LOGIN || 'false') === 'true'
+  },
+
   db: {
     path: process.env.DB_PATH || './data/chat.db'
   },

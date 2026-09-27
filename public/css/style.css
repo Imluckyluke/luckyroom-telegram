@@ -31,6 +31,9 @@ input:focus,select:focus{outline:2px solid var(--primary)}
 .atab{flex:1;padding:8px;border-radius:9px;color:var(--sub);font-weight:600}
 .atab.active{color:var(--primary);background:rgba(51,144,236,.14)}
 .auth-card button:not(.atab):not(.primary){background:var(--surface2);border-radius:10px;padding:11px;width:100%;margin:6px 0}
+#gBtn{display:flex;justify-content:center;margin:4px 0}
+.ordiv{display:flex;align-items:center;gap:10px;color:var(--sub);font-size:13px;margin:10px 0}
+.ordiv::before,.ordiv::after{content:"";flex:1;border-top:1px solid var(--line)}
 
 .app{display:flex;height:100dvh;max-width:1680px;margin:0 auto;background:var(--bg)}
 .sidebar{width:360px;min-width:300px;background:var(--surface);display:flex;flex-direction:column;position:relative;border-right:1px solid rgba(0,0,0,.3);z-index:5}

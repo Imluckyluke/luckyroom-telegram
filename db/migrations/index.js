@@ -22,7 +22,8 @@ const migrations = [
   require('./021_add_message_forward'),
   require('./022_add_group_locks'),
   require('./023_add_group_lock_video'),
-  require('./024_add_stickers')
+  require('./024_add_stickers'),
+  require('./025_add_google_identity')
 ];
 
 function runMigrations(db) {

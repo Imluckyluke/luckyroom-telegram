@@ -44,6 +44,8 @@ function publicUser(user) {
     name: user.name,
     phone: user.phone,
     username: user.username ? `@${user.username}` : null,
+    email: user.email || null,
+    google: !!user.google_id,
     phoneVerified: !!user.phone_verified_at
   };
 }
@@ -175,6 +177,116 @@ router.post('/security-questions/setup', authLimiter, authRequired, (req, res) =
   res.status(201).json({ ok: true });
 });
 
+// GET /api/auth/config (no auth) — tells the login screen which methods
+// are available: Google button (needs GOOGLE_CLIENT_ID) and phone-only
+// login (needs ALLOW_PHONE_ONLY_LOGIN=true).
+router.get('/config', (req, res) => {
+  res.json({
+    googleClientId: config.auth.googleClientId,
+    phoneOnlyLogin: config.auth.allowPhoneOnly
+  });
+});
+
+// POST /api/auth/google  { idToken, deviceName? } — sign in with a Gmail
+// account. The ID token (minted by Google Identity Services in the browser)
+// is verified server-side against Google's tokeninfo endpoint: signature,
+// audience (must equal our GOOGLE_CLIENT_ID) and verified email are all
+// checked. First sign-in auto-creates the account; later ones just log in.
+router.post('/google', authLimiter, async (req, res) => {
+  const { idToken, deviceName } = req.body || {};
+  if (!idToken) {
+    return res.status(400).json({ error: 'idToken is required' });
+  }
+  if (!config.auth.googleClientId) {
+    return res.status(501).json({ error: 'Google login is not configured on this server' });
+  }
+
+  let info;
+  try {
+    const r = await fetch(
+      'https://oauth2.googleapis.com/tokeninfo?id_token=' + encodeURIComponent(String(idToken))
+    );
+    if (!r.ok) return res.status(401).json({ error: 'Invalid Google credential' });
+    info = await r.json();
+  } catch {
+    return res.status(503).json({ error: 'Could not reach Google, please try again' });
+  }
+  if (info.aud !== config.auth.googleClientId) {
+    return res.status(401).json({ error: 'Google credential is not for this app' });
+  }
+  if (info.email_verified !== 'true' && info.email_verified !== true) {
+    return res.status(403).json({ error: 'Your Gmail address is not verified' });
+  }
+  if (!info.sub) return res.status(401).json({ error: 'Invalid Google credential' });
+
+  let user = db.prepare('SELECT * FROM users WHERE google_id = ?').get(info.sub);
+  if (!user) {
+    // Placeholder phone: users.phone is NOT NULL UNIQUE, and "google:<sub>"
+    // can never equal a real normalized number. The password hash is random
+    // garbage, so password login always fails for Google accounts.
+    const placeholder = `google:${info.sub}`;
+    const unusable = bcrypt.hashSync(`unusable-${Date.now()}-${Math.random()}`, 10);
+    const displayName = String(info.name || info.email || 'Google user').slice(0, 80);
+    const created = db
+      .prepare('INSERT INTO users (name, phone, password_hash, google_id, email) VALUES (?, ?, ?, ?, ?)')
+      .run(displayName, placeholder, unusable, info.sub, info.email || null);
+    user = db.prepare('SELECT * FROM users WHERE id = ?').get(created.lastInsertRowid);
+    assignRole(user.id, 'member');
+    bus.emit(USER_REGISTERED, { userId: user.id });
+  }
+
+  if (user.banned_at) {
+    return res.status(403).json({ error: 'Your account has been banned', reason: user.ban_reason || null });
+  }
+
+  const { token } = sessions.issueSession(user, req, deviceName);
+  bus.emit(USER_LOGGED_IN, { userId: user.id });
+  res.json({ token, user: publicUser(user) });
+});
+
+// POST /api/auth/phone-login  { phone, name?, deviceName? } — sign in with
+// just a phone number: no password, no SMS code. Intended for trusted or
+// offline deployments (internet shutdown: no SMS gateway can deliver a
+// code anyway). Disabled unless ALLOW_PHONE_ONLY_LOGIN=true. Unknown
+// numbers auto-register (name required for the new account).
+router.post('/phone-login', authLimiter, (req, res) => {
+  if (!config.auth.allowPhoneOnly) {
+    return res.status(403).json({ error: 'Phone-only login is disabled on this server' });
+  }
+  const { phone, name, deviceName } = req.body || {};
+  if (!phone) {
+    return res.status(400).json({ error: 'phone is required' });
+  }
+  const canonicalPhone = normalizePhone(phone);
+  if (!isValidPhone(canonicalPhone)) {
+    return res.status(400).json({ error: 'Invalid phone number' });
+  }
+
+  let user = findUserByPhone(db, phone);
+  if (!user) {
+    if (!name || !String(name).trim()) {
+      return res.status(400).json({ error: 'name is required for new accounts', newAccount: true });
+    }
+    const unusable = bcrypt.hashSync(`unusable-${Date.now()}-${Math.random()}`, 10);
+    const created = db
+      .prepare('INSERT INTO users (name, phone, password_hash) VALUES (?, ?, ?)')
+      .run(String(name).trim().slice(0, 80), canonicalPhone, unusable);
+    user = db.prepare('SELECT * FROM users WHERE id = ?').get(created.lastInsertRowid);
+    assignRole(user.id, 'member');
+    if (isSuperAdminPhone(user.phone)) {
+      assignRole(user.id, 'super_admin');
+    }
+    bus.emit(USER_REGISTERED, { userId: user.id });
+  }
+
+  if (user.banned_at) {
+    return res.status(403).json({ error: 'Your account has been banned', reason: user.ban_reason || null });
+  }
+
+  const { token } = sessions.issueSession(user, req, deviceName);
+  bus.emit(USER_LOGGED_IN, { userId: user.id });
+  res.json({ token, user: publicUser(user) });
+});
 // POST /api/auth/login  { phone, password, deviceName? }
 router.post('/login', authLimiter, (req, res) => {
   const { phone, password, deviceName } = req.body || {};

@@ -14,10 +14,21 @@
   <div class="auth-card">
     <div class="empty-orb"><svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></div>
     <h2>Luckyroom</h2>
+    <div id="googleWrap" class="hidden">
+      <div id="gBtn"></div>
+      <div class="ordiv"><span>or</span></div>
+    </div>
     <div class="atabs">
-      <button class="atab active" data-t="login">Log in</button>
+      <button class="atab hidden" data-t="phone" id="phoneTab">Phone</button>
+      <button class="atab active" data-t="login">Password</button>
       <button class="atab" data-t="register">Sign up</button>
       <button class="atab" data-t="forgot">Forgot?</button>
+    </div>
+    <div id="phoneForm" class="hidden">
+      <input id="plPhone" inputmode="tel" placeholder="Phone number">
+      <input id="plName" placeholder="Your name (new accounts)">
+      <button id="phoneBtn" class="primary">Continue with phone</button>
+      <p class="hint">No password, no SMS code. Works offline.</p>
     </div>
     <div id="loginForm">
       <input id="liPhone" inputmode="tel" placeholder="Phone number">
@@ -192,6 +203,7 @@
 <div id="lightbox" class="modal hidden"><div class="sheet wide"><img id="lightImg"><br><button data-close>Close</button></div></div>
 
 <script src="/socket.io/socket.io.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="js/api.js"></script>
 <script src="js/app.js"></script>
 </body>

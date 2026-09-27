@@ -49,8 +49,50 @@ const msgPath = t => t.type === 'dm' ? `/conversations/${t.id}` : `/groups/${t.i
 
 /* ================= BOOT / AUTH ================= */
 async function boot() {
+  try {
+    S.authCfg = await Api.get('/auth/config');
+  } catch { S.authCfg = {}; }
+  applyAuthCfg();
   if (Api.token && Api.user) { showApp(); }
   else { showAuth(); }
+}
+// Show/hide login methods based on server config: Google button first
+// (needs GOOGLE_CLIENT_ID), phone-only tab (needs ALLOW_PHONE_ONLY_LOGIN).
+function applyAuthCfg() {
+  const cfg = S.authCfg || {};
+  if (cfg.phoneOnlyLogin) {
+    $('#phoneTab').classList.remove('hidden');
+    document.querySelectorAll('.atab').forEach(x => x.classList.remove('active'));
+    $('#phoneTab').classList.add('active');
+    ['phoneForm', 'loginForm', 'regForm', 'forgotForm'].forEach(id => $('#' + id).classList.toggle('hidden', id !== 'phoneForm'));
+  }
+  if (cfg.googleClientId) {
+    $('#googleWrap').classList.remove('hidden');
+    initGoogle(cfg.googleClientId);
+  }
+}
+function initGoogle(clientId) {
+  if (!window.google?.accounts?.id) {
+    // GIS script not loaded yet (slow net) — retry shortly.
+    setTimeout(() => initGoogle(clientId), 1500);
+    return;
+  }
+  try {
+    google.accounts.id.initialize({ client_id: clientId, callback: onGoogleCred });
+    google.accounts.id.renderButton($('#gBtn'), { theme: 'filled_blue', size: 'large', width: 300, text: 'continue_with' });
+  } catch { }
+}
+async function onGoogleCred(resp) {
+  try {
+    const r = await Api.post('/auth/google', { idToken: resp.credential });
+    Api.save(r.token, r.user);
+    await showApp();
+  } catch (e) { toast(e.message); }
+}
+async function doPhoneLogin(phone, name) {
+  const r = await Api.post('/auth/phone-login', { phone, name: name || undefined });
+  Api.save(r.token, r.user);
+  await showApp();
 }
 function showAuth() {
   $('#authView').classList.remove('hidden');
@@ -60,7 +102,7 @@ async function showApp() {
   $('#authView').classList.add('hidden');
   $('#app').classList.remove('hidden');
   $('#meName').textContent = Api.user.name;
-  $('#mePhone').textContent = Api.user.phone || '';
+  $('#mePhone').textContent = Api.user.email || Api.user.phone || '';
   $('#meAvatar').outerHTML = avatarHTML(Api.user.avatarUrl || null, Api.user.name, 'sm').replace('class="avatar sm"', 'id="meAvatar" class="avatar sm"');
   try {
     await Api.connectSocket();
@@ -498,7 +540,7 @@ async function openPeerInfo() {
     const p = await Api.get(`/users/${c.otherId}`).catch(() => null);
     if (!p) return toast('No info');
     box.innerHTML = `${avatarHTML(p.avatarUrl, p.name, 'xl')}
-      <h2>${esc(p.name)}</h2><p class="gray">${esc(p.username || p.phone)} · ${p.online ? 'online' : 'last seen ' + fmtTime(p.lastSeenAt)}</p>
+      <h2>${esc(p.name)}</h2><p class="gray">${esc(p.username || p.email || (String(p.phone || '').startsWith('google:') ? 'Google user' : p.phone))} · ${p.online ? 'online' : 'last seen ' + fmtTime(p.lastSeenAt)}</p>
       ${esc(p.bio || '')}
       <div class="btn-row">
         <button id="piBlock">${p.blockedByMe ? 'Unblock' : 'Block'}</button>
@@ -613,10 +655,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.atab').forEach(t => t.onclick = () => {
     document.querySelectorAll('.atab').forEach(x => x.classList.remove('active'));
     t.classList.add('active');
-    $('#loginForm').classList.toggle('hidden', t.dataset.t !== 'login');
-    $('#regForm').classList.toggle('hidden', t.dataset.t !== 'register');
-    $('#forgotForm').classList.toggle('hidden', t.dataset.t !== 'forgot');
+    const forms = { phone: 'phoneForm', login: 'loginForm', register: 'regForm', forgot: 'forgotForm' };
+    Object.entries(forms).forEach(([k, id]) => $('#' + id).classList.toggle('hidden', k !== t.dataset.t));
   });
+  $('#phoneBtn').onclick = () => doPhoneLogin($('#plPhone').value.trim(), $('#plName').value.trim()).catch(e => toast(e.message));
   $('#loginBtn').onclick = () => doLogin($('#liPhone').value.trim(), $('#liPass').value).catch(e => toast(e.message));
   $('#regBtn').onclick = () => {
     if ($('#rgPass').value.length < 6) return toast('Password must be 6+ chars');
