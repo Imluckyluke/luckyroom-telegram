@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Luckyroom — Telegram UI</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'><circle cx='120' cy='120' r='120' fill='%233390EC'/><path fill='white' d='M170 78l-22 104c-1.6 7-6 8.7-12.2 5.4l-33.8-25-16.3 15.7c-1.8 1.8-3.3 3.3-6.8 3.3l2.4-34.2 62.3-56.3c2.7-2.4-.6-3.8-4.2-1.4L62 138 28.8 127.7c-7.2-2.3-7.3-7.2 1.5-10.7l132-51c6-2.3 11.2 1.4 9.7 11z'/></svg>">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="authView" class="auth hidden">
+  <div class="auth-card">
+    <div class="empty-orb"><svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></div>
+    <h2>Luckyroom</h2>
+    <div class="atabs">
+      <button class="atab active" data-t="login">Log in</button>
+      <button class="atab" data-t="register">Sign up</button>
+      <button class="atab" data-t="forgot">Forgot?</button>
+    </div>
+    <div id="loginForm">
+      <input id="liPhone" inputmode="tel" placeholder="Phone number">
+      <input id="liPass" type="password" placeholder="Password">
+      <button id="loginBtn" class="primary">Log in</button>
+    </div>
+    <div id="regForm" class="hidden">
+      <input id="rgName" placeholder="Your name">
+      <input id="rgPhone" inputmode="tel" placeholder="Phone number">
+      <input id="rgPass" type="password" placeholder="Password (6+ chars)">
+      <button id="regBtn" class="primary">Sign up</button>
+    </div>
+    <div id="forgotForm" class="hidden">
+      <input id="fgPhone" inputmode="tel" placeholder="Phone number">
+      <button id="fgBtn" class="primary">Send reset code</button>
+      <input id="fgCode" inputmode="numeric" placeholder="Code">
+      <input id="fgNew" type="password" placeholder="New password">
+      <button id="fgResetBtn">Reset password</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="app hidden">
+  <aside id="sidebar" class="sidebar">
+    <div class="side-head">
+      <button id="burger" class="icon-btn"><svg viewBox="0 0 24 24"><path d="M3 5.5h18v1.8H3zM3 11.1h18v1.8H3zM3 16.7h18v1.8H3z"/></svg></button>
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" class="sic"><path d="M10 2a8 8 0 1 0 4.91 14.33l4.72 4.72a1 1 0 0 0 1.41-1.41l-4.72-4.72A8 8 0 0 0 10 2zm0 2a6 6 0 1 1 0 12 6 6 0 0 1 0-12z"/></svg>
+        <input id="search" placeholder="Search" autocomplete="off">
+      </div>
+      <button id="bellBtn" class="icon-btn bell">🔔<span id="bellBadge" class="badge hidden"></span></button>
+    </div>
+    <div class="stories" id="stories"></div>
+    <nav class="folders" id="folders"></nav>
+    <div class="chat-list" id="chatList"></div>
+    <button id="fab" class="fab"><svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm-9 9H7V9h4V5h2v4h4v2h-4v4H9z"/></svg></button>
+  </aside>
+
+  <main id="main" class="main">
+    <div class="wall"></div>
+    <div id="emptyState" class="empty-state">
+      <div class="empty-card">
+        <div class="empty-orb"><svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></div>
+        <h3>Select a chat to start messaging</h3>
+        <p>Your groups and conversations live here.</p>
+      </div>
+    </div>
+    <div id="chatView" class="chat-view hidden">
+      <header class="chat-head">
+        <button id="backBtn" class="icon-btn back">‹</button>
+        <div class="peer" id="peerBtn">
+          <div class="avatar sm" id="peerAvatar">—</div>
+          <div class="peer-meta">
+            <div class="peer-name"><span id="peerName"></span></div>
+            <div class="peer-status" id="peerStatus"></div>
+          </div>
+        </div>
+        <div class="head-actions">
+          <button class="icon-btn" id="searchMsgBtn"><svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 1 0 4.91 14.33l4.72 4.72a1 1 0 0 0 1.41-1.41l-4.72-4.72A8 8 0 0 0 10 2zm0 2a6 6 0 1 1 0 12 6 6 0 0 1 0-12z"/></svg></button>
+          <button class="icon-btn" id="infoBtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg></button>
+        </div>
+      </header>
+      <div id="pinnedBar" class="pinned-bar hidden">
+        <span class="pl"></span>
+        <div class="pinned-txt"><b>Pinned message</b><p id="pinnedText"></p></div>
+        <button class="icon-btn" id="pinnedClose">✕</button>
+      </div>
+      <div id="msgs" class="msgs"></div>
+      <button id="toBottom" class="to-bottom hidden">↓</button>
+      <div id="replyBar" class="reply-bar hidden">
+        <span class="rl"></span>
+        <div><b id="replyName"></b><p id="replyText"></p></div>
+        <button class="icon-btn" id="replyClose">✕</button>
+      </div>
+      <footer class="composer-wrap">
+        <div id="upProg" class="up-prog"></div>
+        <div class="composer">
+          <button class="icon-btn" id="attachBtn">＋</button>
+          <div class="input-box">
+            <input id="msgInput" placeholder="Write a message..." autocomplete="off">
+            <button class="icon-btn" id="emojiBtn"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-3.5 7a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm7 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zM12 17.5a4.5 4.5 0 0 1-4-2.5h8a4.5 4.5 0 0 1-4 2.5z"/></svg></button>
+            <button class="icon-btn" id="stickBtn">🎭</button>
+          </div>
+          <button id="micBtn" class="icon-btn mic">🎤</button>
+          <button id="sendBtn" class="send-btn"><svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></button>
+        </div>
+      </footer>
+      <div id="attachPop" class="attach-pop hidden">
+        <button id="pickPhoto">🖼 Photo</button>
+        <button id="pickVideo">🎬 Video</button>
+        <button id="pickFile">📄 File</button>
+      </div>
+      <div id="emojiPop" class="emoji-pop hidden"></div>
+      <div id="stickPop" class="stick-pop hidden">
+        <div class="stick-imp"><input id="stickUrl" placeholder="t.me/addstickers/name"><button id="stickImport">Import</button></div>
+        <div id="stickGrid"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<input type="file" id="filePhoto" accept="image/*" class="hidden">
+<input type="file" id="fileDoc" class="hidden">
+<input type="file" id="fileVideo" accept="video/*" class="hidden">
+<input type="file" id="pfAvaFile" accept="image/*" class="hidden">
+
+<div id="scrim" class="scrim hidden"></div>
+<nav id="drawer" class="drawer">
+  <div class="me"><div class="avatar lg" id="meAvatar">?</div><div><b id="meName"></b><p id="mePhone"></p></div></div>
+  <button id="newChatBtn">✏️&nbsp; New chat / group</button>
+  <button id="profileBtn">👤&nbsp; My profile</button>
+  <button id="adminBtn" class="hidden">🛡&nbsp; Admin</button>
+  <button id="themeBtn">🌙&nbsp; Night mode</button>
+  <hr><button id="logoutBtn">🚪&nbsp; Log out</button>
+  <div class="ver">Luckyroom · Telegram UI</div>
+</nav>
+
+<div id="ctx" class="ctx hidden"></div>
+<div id="toasts"></div>
+
+<div id="newModal" class="modal hidden"><div class="sheet">
+  <h3>Start chat</h3>
+  <input id="dmInput" placeholder="Phone or @username"><button id="startDmBtn" class="primary">Message</button>
+  <h3>New group</h3>
+  <input id="grpName" placeholder="Group name">
+  <select id="grpType"><option value="private">Private</option><option value="public">Public</option></select>
+  <input id="grpMembers" placeholder="Member phones, comma separated">
+  <button id="createGrpBtn" class="primary">Create</button>
+  <h3>Public groups</h3>
+  <div class="btn-row"><input id="pubQ" placeholder="Search…"><button id="pubSearchBtn">Search</button></div>
+  <div id="pubList"></div>
+  <h3>Pending invites</h3>
+  <div id="invList"></div>
+  <button data-close>Close</button>
+</div></div>
+
+<div id="peerModal" class="modal hidden"><div class="sheet"><div id="peerBody"></div><button data-close>Close</button></div></div>
+
+<div id="profileModal" class="modal hidden"><div class="sheet">
+  <h3>My profile</h3>
+  <div id="pfAva">?</div>
+  <button id="pfAvaBtn">Change photo</button>
+  <input id="pfName" placeholder="Name"><input id="pfBio" placeholder="Bio"><input id="pfUser" placeholder="@username">
+  <button id="pfSave" class="primary">Save</button>
+  <div id="verifyRow"><button id="verifyBtn">Verify phone number</button></div>
+  <h3>Sessions</h3><div id="sessList"></div>
+  <button id="sessOthers">Revoke other sessions</button>
+  <button data-close>Close</button>
+</div></div>
+
+<div id="fwdModal" class="modal hidden"><div class="sheet"><h3>Forward to…</h3><div id="fwdList"></div><button data-close>Close</button></div></div>
+
+<div id="notifModal" class="modal hidden"><div class="sheet"><h3>Notifications</h3><div id="notifList"></div><button data-close>Close</button></div></div>
+
+<div id="secQModal" class="modal hidden"><div class="sheet">
+  <h3>Security questions (account recovery)</h3>
+  <div id="secQList"></div>
+  <div class="btn-row"><button id="secQSave" class="primary">Save</button><button id="secQSkip">Skip</button></div>
+</div></div>
+
+<div id="adminModal" class="modal hidden"><div class="sheet">
+  <h3>Admin</h3>
+  <div class="btn-row"><input id="admPhone" placeholder="User phone"><button id="admGo">Look up</button></div>
+  <div id="admResult"></div>
+  <h3>Broadcast</h3>
+  <input id="admTitle" placeholder="Title"><input id="admBody" placeholder="Body (optional)">
+  <button id="admBc" class="primary">Send broadcast</button>
+  <button data-close>Close</button>
+</div></div>
+
+<div id="lightbox" class="modal hidden"><div class="sheet wide"><img id="lightImg"><br><button data-close>Close</button></div></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
