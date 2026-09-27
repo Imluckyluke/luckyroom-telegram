@@ -113,7 +113,10 @@ async function showApp() {
     await reloadLists();
     startNotifPoll();
     if (innerWidth > 925 && S.chats[0]) openChat(S.chats[0]);
-    else renderAll();
+    else {
+      renderAll();
+      if (innerWidth <= 925) { $('#sidebar').classList.remove('hide'); $('#main').classList.add('hide'); }
+    }
   } catch (e) { logout(true); }
 }
 function logout(silent) {
@@ -171,7 +174,11 @@ function statusText(c) {
   if (S.typingUsers['group:' + c.id]) return S.typingUsers['group:' + c.id] + ' typing...';
   return c.sub || '';
 }
-function renderAll() { renderFolders(); renderList(); renderStories(); }
+function renderAll() {
+  renderFolders(); renderList(); renderStories();
+  const sf = $('#startFreshBtn');
+  if (sf) sf.classList.toggle('hidden', S.chats.length > 0);
+}
 function renderStories() {
   const others = S.chats.filter(c => c.kind === 'dm').slice(0, 6);
   $('#stories').innerHTML = `<div class="story"><div class="ring mine"><span>${esc(initials(Api.user.name))}</span><span class="plus">+</span></div>My Story</div>` +
@@ -746,6 +753,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#profileBtn').onclick = () => { $('#scrim').click(); openProfile(); };
   $('#adminBtn').onclick = () => { $('#scrim').click(); openAdmin(); };
   $('#newChatBtn').onclick = () => { $('#scrim').click(); openModal('#newModal'); loadInvites(); };
+  $('#startFreshBtn').onclick = () => { openModal('#newModal'); loadInvites(); };
   $('#startDmBtn').onclick = async () => {
     const v = $('#dmInput').value.trim(); if (!v) return;
     const body = v.startsWith('@') ? { username: v } : (/^\d+$/.test(v) ? { phone: v } : { username: v });
